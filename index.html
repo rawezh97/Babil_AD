@@ -1,75 +1,165 @@
 <!DOCTYPE html>
-<html>
+<html lang="ku" dir="rtl">
 <head>
-    <title>نرخی گەیاندن بۆ سەرجەم ناوچەکانی کوردوستان</title>
+    <title>Delivery Map System</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+
     <style>
-        #map { height: 700px; width: 100%; border-radius: 12px; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f0f2f5; }
+        /* Import the font in CSS if not in head */
+    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap');
+
+    .header-card {
+        /* Glassmorphism background */
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(15px);
+        padding: 12px 30px;
+        border-radius: 50px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         
-        .price-label {
-            background: #2ecc71;
-            border: 2px solid #27ae60;
-            border-radius: 5px;
-            color: white;
-            font-weight: bold;
-            padding: 4px 8px;
-            font-size: 13px;
+        /* Positioning */
+        position: absolute; 
+        top: 20px; 
+        right: 50%; 
+        transform: translateX(50%); 
+        z-index: 900;
+        text-align: center; 
+        white-space: nowrap;
+        pointer-events: none;
+    }
+
+    .header-card h2 {
+        margin: 0;
+        /* THE FONT SETUP */
+        font-family: 'Vazirmatn', sans-serif;
+        font-weight: 800; /* Extra Bold */
+        font-size: 18px;
+        letter-spacing: -0.5px;
+        
+        /* Nice Gradient Text Color */
+        background: linear-gradient(45deg, #2c3e50, #2980b9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .header-card i {
+        /* Icon color (Solid, because gradients don't always work on icons) */
+        color: #e74c3c; 
+        font-size: 20px;
+        -webkit-text-fill-color: #e74c3c;
+    }
+
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --font: 'Cairo', sans-serif;
         }
 
-        .store-label {
-            background: #e74c3c;
-            color: white;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: 1px solid #c0392b;
+        body { margin: 0; padding: 0; font-family: var(--font); overflow: hidden; background: #e5e9ec; }
+        #map { height: 100vh; width: 100vw; z-index: 1; }
+
+        /* --- HEADER --- */
+        .header-card {
+            position: absolute; top: 20px; right: 50%; transform: translateX(50%); z-index: 900;
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+            padding: 10px 25px; border-radius: 50px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); border: 1px solid rgba(255,255,255,0.6);
+            text-align: center; white-space: nowrap; pointer-events: none;
         }
+        .header-card h2 { margin: 0; font-size: 16px; color: var(--primary); font-weight: 800; }
+
+        /* --- PRICE BADGES --- */
+        .price-badge { background: transparent; border: none; }
+        .badge-inner {
+            display: flex; box-shadow: 0 4px 6px rgba(0,0,0,0.15); border-radius: 8px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            cursor: pointer; transition: transform 0.2s;
+        }
+        .badge-inner:hover { transform: scale(1.15); z-index: 999; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
         
-        /* This makes the local logo look clean */
-        .custom-store-icon {
-            border: 2px solid white;
-            border-radius: 10%;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        .badge-name { background: white; padding: 6px 10px; font-weight: 700; color: #34495e; font-size: 12px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+        .badge-price { background: var(--accent); color: white; padding: 6px 8px; border-top-left-radius: 8px; border-bottom-left-radius: 8px; font-weight: 800; font-size: 12px; }
+
+        /* --- STORE PULSE --- */
+        .store-icon-container { position: relative; }
+        .store-img { border: 3px solid #fff; border-radius: 50%; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); width: 100%; height: 100%; object-fit: cover; background: white; }
+        .pulse-ring { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; border-radius: 50%; border: 2px solid #e74c3c; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2); opacity: 0; } }
+
+        /* --- POPUPS --- */
+        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; font-family: var(--font); }
+        .leaflet-popup-content { margin: 0; width: 260px !important; }
+        .popup-header { background: #34495e; color: white; padding: 12px; font-size: 14px; text-align: center; font-weight: bold; }
+        .popup-body { padding: 15px; background: #f8f9fa; }
+        
+        /* Admin Code Box */
+        .code-area { 
+            width: 100%; background: #fff; border: 1px solid #ccc; color: #333;
+            padding: 8px; border-radius: 6px; font-family: monospace; direction: ltr; text-align: left;
+            font-size: 11px; margin-bottom: 10px; box-sizing: border-box; resize: none; 
         }
+        .btn-copy {
+            background: #2980b9; color: white; border: none; width: 100%; padding: 10px;
+            border-radius: 6px; font-weight: bold; cursor: pointer; font-family: var(--font);
+        }
+        .btn-copy:hover { background: #1f6391; }
+
+        /* Layer Control Tweak */
+        .leaflet-control-layers { 
+            border-radius: 12px !important; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; 
+            border: none !important;
+            padding: 8px !important;
+            font-family: var(--font) !important;
+        }
+
+        /* Loading Spinner */
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Toast */
+        #toast {
+            visibility: hidden; min-width: 200px; background-color: #2ecc71; color: white;
+            text-align: center; border-radius: 50px; padding: 12px 20px; position: fixed;
+            z-index: 2000; left: 50%; bottom: 30px; transform: translateX(-50%);
+            font-size: 14px; font-weight: bold; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body>
+    
 
-    <h2 style="text-align:center;">نرخی گەیاندن بۆ سەرجەم ناوچەکانی کوردوستان</h2>
+    <div class="header-card">
+        <h2><i class="fas fa-map-marked-alt"></i> نرخی گەیاندن کارەکانی مطبعە بابل</h2>
+        
+    </div>
+
     <div id="map"></div>
+    <div id="toast"><i class="fas fa-check"></i> کۆدەکە کۆپی کرا</div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
     <script>
-        var map = L.map('map').setView([35.8, 44.8], 8);
+        // --- 1. DATA (Your updated list) ---
+        var storeLat = 35.545379;
+        var storeLng = 45.435854;
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
-
-        // --- LOCAL LOGO CONFIGURATION ---
-        var storeIcon = L.icon({
-            iconUrl: 'babil.png', // <--- MAKE SURE YOUR FILE IS NAMED EXACTLY THIS
-            iconSize: [50, 50], 
-            iconAnchor: [25, 25], 
-            popupAnchor: [0, -25],
-            className: 'custom-store-icon'
-        });
-
-        var storeLat = 35.54537932945422;
-        var storeLng = 45.43585442508629;
-
-        // Add Store Marker
-        L.marker([storeLat, storeLng], {icon: storeIcon}).addTo(map)
-            .bindTooltip("مطبعە بابل", {
-                permanent: true, 
-                direction: 'top', 
-                className: 'store-label'
-            });
-
-        // --- DELIVERY LOCATIONS --- 35.72989593189187, 45.14672418253225
         var deliveryPoints = [
             { name: "تاسڵوجە", lat: 35.60111162573354, lng: 45.23059539796698, price: "20,000" },
             { name: "هەڵەبجەی شەهید", lat: 35.1776, lng: 45.9861, price: "50,000" },
@@ -90,18 +180,152 @@
             { name: "ڕاپەڕین", lat: 35.58196507611025, lng: 45.32875145958732, price: "10,000" },
             { name: "کەنەکەوە", lat: 35.59368456528328, lng: 45.259914168770024, price: "15,000" },
             { name: "هوانە", lat: 35.50026493274545, lng: 45.43812290076695, price: "10,000" },
-            { name: "ژەڵە", lat: 35.49593384792176, lng: 45.46045821479674, price: "15,000" },
+            { name: "ژەڵە", lat: 35.49593384792176, lng: 45.46045821479674, price: "15,000" }
         ];
 
-        deliveryPoints.forEach(function(point) {
-            L.marker([point.lat, point.lng]).addTo(map)
-             .bindTooltip(point.name + "<br>" + point.price, {
-                permanent: true, 
-                direction: 'right',
-                className: 'price-label',
-                offset: [10, 0]
-            });
+        // --- 2. MAP & LAYERS (Feature: Change Map) ---
+        
+        // 1. Street Map (Default)
+        var streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: 'CartoDB', maxZoom: 19
         });
+
+        // 2. Satellite (Esri World Imagery)
+        var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Esri', maxZoom: 19
+        });
+
+        // 3. Dark Mode
+        var darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: 'CartoDB', maxZoom: 19
+        });
+
+        // Initialize Map
+        var map = L.map('map', {
+            zoomControl: false, 
+            layers: [streetLayer] // Default layer
+        }).setView([35.55, 45.45], 10);
+
+        // Add Layer Control (Top Right)
+        var baseMaps = {
+            "نەخشەی رێگا": streetLayer,
+            "سەتەلایت (Satellite)": satelliteLayer,
+            "تاریک (Dark)": darkLayer
+        };
+        L.control.layers(baseMaps).addTo(map);
+
+        // --- 3. RENDERING ---
+        var activeLine = null;
+        var infoPopup = L.popup({ className: 'custom-popup', minWidth: 260 });
+
+        // Store Marker
+        var storeIcon = L.divIcon({
+            className: 'store-icon-container',
+            html: '<div class="pulse-ring"></div><img src="babil.png" class="store-img">',
+            iconSize: [50, 50], iconAnchor: [25, 25]
+        });
+        L.marker([storeLat, storeLng], {icon: storeIcon, zIndexOffset: 1000}).addTo(map);
+
+        // Delivery Points Loop
+        deliveryPoints.forEach(p => {
+            var badgeHtml = `<div class="badge-inner">
+                                <span class="badge-name">${p.name}</span>
+                                <span class="badge-price">${p.price}</span>
+                             </div>`;
+            var customIcon = L.divIcon({ className: 'price-badge', html: badgeHtml, iconSize: [null, 30], iconAnchor: [40, 15] });
+
+            var marker = L.marker([p.lat, p.lng], {icon: customIcon}).addTo(map);
+
+            // Click: Route
+            marker.on('click', () => calculateRoute(p));
+        });
+
+        // --- 4. ROUTING LOGIC ---
+        async function calculateRoute(point) {
+            if (activeLine) map.removeLayer(activeLine);
+            
+            // Show Loader
+            infoPopup.setLatLng([point.lat, point.lng])
+                     .setContent(`<div class="popup-header">${point.name}</div><div class="popup-body"><div class="loader"></div><p style="text-align:center; font-size:12px">Calculating...</p></div>`)
+                     .openOn(map);
+
+            try {
+                var url = `https://router.project-osrm.org/route/v1/driving/${storeLng},${storeLat};${point.lng},${point.lat}?overview=full&geometries=geojson`;
+                var response = await fetch(url);
+                var data = await response.json();
+
+                if (data.code !== "Ok") throw new Error("Route Error");
+                
+                var route = data.routes[0];
+                var distKm = (route.distance / 1000).toFixed(1);
+                var durationMin = Math.round(route.duration / 60);
+                
+                var latLngs = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                
+                activeLine = L.polyline(latLngs, { color: '#27ae60', weight: 5, opacity: 0.8 }).addTo(map);
+
+                infoPopup.setContent(`
+                    <div class="popup-header">${point.name}</div>
+                    <div class="popup-body">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>نرخ:</span> <b>${point.price}</b></div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>دووری:</span> <b>${distKm} KM</b></div>
+                        <div style="display:flex; justify-content:space-between;"><span>کات:</span> <b>~${durationMin} min</b></div>
+                    </div>`);
+
+            } catch (e) {
+                infoPopup.setContent(`<div class="popup-body" style="color:red; text-align:center">Failed to load route</div>`);
+            }
+        }
+
+        // --- 5. ADMIN TOOL (Right Click to Copy Code) ---
+        map.on('contextmenu', function(e) {
+            // 1. Initial Placeholder
+            showCodePopup(e.latlng, "Loading Name...", "15,000");
+
+            // 2. Fetch Real Name
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&accept-language=ku,en`)
+                .then(r => r.json()).then(data => {
+                    var name = data.name || " شوێنی نوێ";
+                    // Update popup with real name
+                    showCodePopup(e.latlng, name, "15,000");
+                });
+        });
+
+        function showCodePopup(latlng, name, price) {
+            var cleanName = name.replace(/"/g, "'");
+            // EXACT FORMAT REQUESTED:
+            var codeString = `{ name: "${cleanName}", lat: ${latlng.lat}, lng: ${latlng.lng}, price: "${price}" },`;
+            
+            var content = `
+                <div class="popup-header">دیاریکردنی شوێن</div>
+                <div class="popup-body">
+                    <textarea class="code-area" id="codeField" rows="3" readonly>${codeString}</textarea>
+                    <button class="btn-copy" onclick="copyToClipboard()">کۆپی کردنی کۆد</button>
+                </div>
+            `;
+            
+            // We use L.popup() directly to ensure it opens fresh
+            L.popup({ className: 'custom-popup', minWidth: 280 })
+                .setLatLng(latlng)
+                .setContent(content)
+                .openOn(map);
+        }
+
+        function copyToClipboard() {
+            var copyText = document.getElementById("codeField");
+            copyText.select();
+            document.execCommand("copy");
+            
+            // Show Toast
+            var x = document.getElementById("toast");
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+            
+            map.closePopup();
+        }
+
+        map.on('popupclose', () => { if(activeLine) map.removeLayer(activeLine); activeLine = null; });
+
     </script>
 </body>
 </html>
