@@ -219,12 +219,12 @@
         var infoPopup = L.popup({ className: 'custom-popup', minWidth: 260 });
 
         // Store Marker
-        var storeIcon = L.divIcon({
-            className: 'store-icon-container',
-            html: '<div class="pulse-ring"></div><img src="babil.png" class="store-img">',
-            iconSize: [50, 50], iconAnchor: [25, 25]
-        });
-        L.marker([storeLat, storeLng], {icon: storeIcon, zIndexOffset: 1000}).addTo(map);
+        // var storeIcon = L.divIcon({
+        //     className: 'store-icon-container',
+        //     html: '<div class="pulse-ring"></div><img src="babil.png" class="store-img">',
+        //     iconSize: [50, 50], iconAnchor: [25, 25]
+        // });
+        // L.marker([storeLat, storeLng], {icon: storeIcon, zIndexOffset: 1000}).addTo(map);
 
         // Delivery Points Loop
         deliveryPoints.forEach(p => {
